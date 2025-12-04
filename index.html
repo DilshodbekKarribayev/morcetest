@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Trainer - 5 Second Rule</title>
+    <style>
+        body{margin:0;height:100vh;background:#000;color:#0f0;font-family:'Courier New',monospace;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;}
+        #word{font-size:120px;letter-spacing:20px;margin-bottom:10px;text-shadow:0 0 40px #0f0;}
+        #timer{font-size:90px;margin-bottom:20px;color:#0ff;font-weight:bold;}
+        #currentInput{font-size:90px;margin-bottom:20px;color:#0ff;min-height:110px;}
+        #inputLine{font-size:110px;letter-spacing:30px;margin-bottom:60px;}
+        #button{width:380px;height:380px;border-radius:50%;background:#111;border:20px solid #0f0;box-shadow:0 0 80px #0f0;cursor:pointer;user-select:none;font-size:48px;font-weight:bold;display:flex;align-items:center;justify-content:center;}
+        #button.pressed{background:#0f0;color:#000;box-shadow:0 0 250px #0f0;transform:scale(0.9);}
+        .wrong{animation:shake 0.6s;background:#600;}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-35px)}75%{transform:translateX(35px)}}
+        .info{position:absolute;top:20px;font-size:26px;color:#0a0;background:#111;padding:15px;border:3px solid #0f0;border-radius:15px;}
+    </style>
+</head>
+<body>
+
+<div class="info">
+    Short → .<br>Hold 0.5s → —
+</div>
+
+<div id="word">YES</div>
+<div id="timer">5.0</div>
+<div id="currentInput"></div>
+<div id="inputLine">_ _ _</div>
+<div id="button">PRESS</div>
+
+<script>
+    const words = ["HELLO","WORLD","MORSE","CODE","RADIO","YES","YOU","FRIEND","HOME","LOVE","PEACE","GOOD","NIGHT","STAR","MOON","SKY","WAVE","TEST","SOS"];
+
+    const morseToLetter = {
+        '.-':'A',
+        '-...':'B',
+        '-.-.':'C',
+        '-..':'D',
+        '.':'E',
+        '..-.':'F',
+        '--.':'G',
+        '....':'H',
+        '..':'I',
+        '.---':'J',
+        '-.-':'K',
+        '.-..':'L',
+        '--':'M',
+        '-.':'N',
+        '---':'O',
+        '.--.':'P',
+        '--.-':'Q',
+        '.-.':'R',
+        '...':'S',
+        '-':'T',
+        '..-':'U',
+        '...-':'V',
+        '.--':'W',
+        '-..-':'X',
+        '-.--':'Y',
+        '--..':'Z'
+    };
+
+    let currentWord = "";
+    let guessed = [];
+    let currentCode = "";
+    let timer = null;
+    let timeLeft = 5.0;
+
+    const wordEl = document.getElementById("word");
+    const timerEl = document.getElementById("timer");
+    const currentEl = document.getElementById("currentInput");
+    const inputEl = document.getElementById("inputLine");
+    const button = document.getElementById("button");
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function play(dur, freq=800){
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.frequency.value = freq; o.type = "sine"; g.gain.value = 0.5;
+        o.start(); o.stop(audioCtx.currentTime + dur/1000);
+    }
+
+    function startTimer(){
+        clearInterval(timer);
+        timeLeft = 5.0;
+        timerEl.textContent = "5.0";
+        timerEl.style.color = "#0ff";
+
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            timerEl.textContent = timeLeft.toFixed(1);
+            if(timeLeft <= 1.0) timerEl.style.color = "#ff0";
+            if(timeLeft <= 0){
+                clearInterval(timer);
+                checkAfterTimeout(); // Faqat bu yerda tekshiriladi!
+            }
+        }, 100);
+    }
+
+    function checkAfterTimeout(){
+        const expectedLetter = currentWord[guessed.length];
+        const enteredLetter = morseToLetter[currentCode];
+
+        if(enteredLetter === expectedLetter){
+            // To'g'ri!
+            guessed.push(expectedLetter);
+            currentCode = "";
+            currentEl.textContent = "";
+            updateLine();
+            play(300, 1200);
+            if(guessed.length === currentWord.length){
+                setTimeout(newWord, 1200);
+            } else {
+                setTimeout(startTimer, 800); // keyingi harfga 5 sekund
+            }
+        } else {
+            // Xato yoki to'liq emas
+            wrong();
+        }
+    }
+
+    function wrong(){
+        document.body.classList.add("wrong");
+        play(600, 300);
+        setTimeout(() => {
+            document.body.classList.remove("wrong");
+            guessed = [];
+            currentCode = "";
+            currentEl.textContent = "";
+            updateLine();
+            startTimer();
+        }, 1000);
+    }
+
+    function newWord(){
+        if(words.length === 0){
+            wordEl.textContent = "FINISHED!";
+            inputEl.textContent = "Perfect!";
+            clearInterval(timer);
+            button.style.display = "none";
+            return;
+        }
+        const i = Math.floor(Math.random() * words.length);
+        currentWord = words.splice(i, 1)[0];
+        guessed = [];
+        currentCode = "";
+        wordEl.textContent = currentWord;
+        updateLine();
+        currentEl.textContent = "";
+        startTimer();
+    }
+
+    function updateLine(){
+        let s = "";
+        for(let i = 0; i < currentWord.length; i++) s += (guessed[i] || "_") + " ";
+        inputEl.textContent = s.trim();
+    }
+
+    let pressStart = 0;
+    const LONG_PRESS = 500;
+
+    button.addEventListener("mousedown", e => {
+        e.preventDefault();
+        pressStart = Date.now();
+        button.classList.add("pressed");
+    });
+
+    button.addEventListener("mouseup", e => {
+        e.preventDefault();
+        if(!button.classList.contains("pressed")) return;
+        const dur = Date.now() - pressStart;
+        button.classList.remove("pressed");
+
+        const sym = dur < LONG_PRESS ? "." : "-";
+        currentCode += sym;
+
+        currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim();
+        play(dur < LONG_PRESS ? 120 : 360, 900);
+
+        // Hech qachon o'rtada tekshirmaymiz!
+        // Faqat 5 sekund tugaganda tekshiriladi
+    });
+
+    button.addEventListener("touchstart", e=>{e.preventDefault(); button.dispatchEvent(new Event("mousedown"));});
+    button.addEventListener("touchend",   e=>{e.preventDefault(); button.dispatchEvent(new Event("mouseup"));});
+
+    newWord();
+    document.body.addEventListener("click", () => audioCtx.resume(), {once:true});
+</script>
+</body>
+</html>
