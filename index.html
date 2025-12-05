@@ -2,63 +2,157 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morse Trainer - 5 Second Rule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Morse Trainer - Stats Added</title>
     <style>
-        body{margin:0;height:100vh;background:#000;color:#0f0;font-family:'Courier New',monospace;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;}
-        #word{font-size:120px;letter-spacing:20px;margin-bottom:10px;text-shadow:0 0 40px #0f0;}
-        #timer{font-size:90px;margin-bottom:20px;color:#0ff;font-weight:bold;}
-        #currentInput{font-size:90px;margin-bottom:20px;color:#0ff;min-height:110px;}
-        #inputLine{font-size:110px;letter-spacing:30px;margin-bottom:60px;}
-        #button{width:380px;height:380px;border-radius:50%;background:#111;border:20px solid #0f0;box-shadow:0 0 80px #0f0;cursor:pointer;user-select:none;font-size:48px;font-weight:bold;display:flex;align-items:center;justify-content:center;}
-        #button.pressed{background:#0f0;color:#000;box-shadow:0 0 250px #0f0;transform:scale(0.9);}
-        .wrong{animation:shake 0.6s;background:#600;}
-        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-35px)}75%{transform:translateX(35px)}}
-        .info{position:absolute;top:20px;font-size:26px;color:#0a0;background:#111;padding:15px;border:3px solid #0f0;border-radius:15px;}
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #word {
+            font-size: 15vmin; 
+            letter-spacing: 2vmin;
+            margin-bottom: 1vh;
+            text-shadow: 0 0 4vmin #0f0;
+            text-align: center;
+            margin-top: 5vh; /* Info panellar bilan ustma-ust tushmasligi uchun joy */
+        }
+
+        #timer {
+            font-size: 10vmin;
+            margin-bottom: 2vh;
+            color: #0ff;
+            font-weight: bold;
+        }
+
+        #currentInput {
+            font-size: 10vmin;
+            margin-bottom: 2vh;
+            color: #0ff;
+            min-height: 8vmin;
+        }
+
+        #inputLine {
+            font-size: 8vmin;
+            letter-spacing: 2vmin;
+            margin-bottom: 5vh;
+            text-align: center;
+        }
+
+        #button {
+            width: 25vmin;
+            height: 25vmin;
+            min-width: 200px;
+            min-height: 200px;
+            border-radius: 50%;
+            background: #111;
+            border: 1.5vmin solid #0f0;
+            box-shadow: 0 0 6vmin #0f0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 5vmin;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        #button.pressed {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 15vmin #0f0;
+            transform: scale(0.9);
+        }
+
+        .wrong {
+            animation: shake 0.6s;
+            background: #600;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2vmin); }
+            75% { transform: translateX(2vmin); }
+        }
+
+        /* Ikkala panel uchun umumiy stil (dizayn bir xil bo'lishi uchun) */
+        .info, .stats {
+            position: absolute;
+            top: 2vh;
+            font-size: 3vmin;
+            color: #0a0;
+            background: #111;
+            padding: 1.5vmin;
+            border: 0.3vmin solid #0f0;
+            border-radius: 1.5vmin;
+            z-index: 10;
+            line-height: 1.4;
+        }
+
+        .info {
+            left: 2vh;
+            text-align: left;
+        }
+
+        /* Yangi qo'shilgan qism: O'ng yuqori burchak */
+        .stats {
+            right: 2vh;
+            text-align: right;
+        }
+        
+        @media (max-width: 400px) {
+            #button {
+                width: 60vw;
+                height: 60vw;
+                min-width: auto;
+                min-height: auto;
+            }
+            .info, .stats {
+                font-size: 3.5vmin; /* Mobil uchun sal kattaroq o'qilishi uchun */
+                padding: 1vmin;
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- Chap panel: Yo'riqnoma -->
 <div class="info">
-    Short → .<br>Hold 0.5s → —
+    Short → .<br>Hold → —
 </div>
 
-<div id="word">YES</div>
+<!-- O'ng panel: Statistika -->
+<div class="stats">
+    Word: <span id="scoreVal" style="color:#fff">0</span><br>
+    Fail: <span id="errorVal" style="color:#f00">0</span>
+</div>
+
+<div id="word">START</div>
 <div id="timer">5.0</div>
 <div id="currentInput"></div>
-<div id="inputLine">_ _ _</div>
+<div id="inputLine">_ _ _ _ _</div>
 <div id="button">PRESS</div>
 
 <script>
     const words = ["HELLO","WORLD","MORSE","CODE","RADIO","YES","YOU","FRIEND","HOME","LOVE","PEACE","GOOD","NIGHT","STAR","MOON","SKY","WAVE","TEST","SOS"];
 
     const morseToLetter = {
-        '.-':'A',
-        '-...':'B',
-        '-.-.':'C',
-        '-..':'D',
-        '.':'E',
-        '..-.':'F',
-        '--.':'G',
-        '....':'H',
-        '..':'I',
-        '.---':'J',
-        '-.-':'K',
-        '.-..':'L',
-        '--':'M',
-        '-.':'N',
-        '---':'O',
-        '.--.':'P',
-        '--.-':'Q',
-        '.-.':'R',
-        '...':'S',
-        '-':'T',
-        '..-':'U',
-        '...-':'V',
-        '.--':'W',
-        '-..-':'X',
-        '-.--':'Y',
-        '--..':'Z'
+        '.-':'A', '-...':'B', '-.-.':'C', '-..':'D', '.':'E', '..-.':'F',
+        '--.':'G', '....':'H', '..':'I', '.---':'J', '-.-':'K', '.-..':'L',
+        '--':'M', '-.':'N', '---':'O', '.--.':'P', '--.-':'Q', '.-.':'R',
+        '...':'S', '-':'T', '..-':'U', '...-':'V', '.--':'W', '-..-':'X',
+        '-.--':'Y', '--..':'Z'
     };
 
     let currentWord = "";
@@ -66,12 +160,18 @@
     let currentCode = "";
     let timer = null;
     let timeLeft = 5.0;
+    
+    // Statistika o'zgaruvchilari
+    let score = 0;
+    let errors = 0;
 
     const wordEl = document.getElementById("word");
     const timerEl = document.getElementById("timer");
     const currentEl = document.getElementById("currentInput");
     const inputEl = document.getElementById("inputLine");
     const button = document.getElementById("button");
+    const scoreEl = document.getElementById("scoreVal");
+    const errorEl = document.getElementById("errorVal");
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -94,7 +194,7 @@
             if(timeLeft <= 1.0) timerEl.style.color = "#ff0";
             if(timeLeft <= 0){
                 clearInterval(timer);
-                checkAfterTimeout(); // Faqat bu yerda tekshiriladi!
+                checkAfterTimeout(); 
             }
         }, 100);
     }
@@ -104,24 +204,30 @@
         const enteredLetter = morseToLetter[currentCode];
 
         if(enteredLetter === expectedLetter){
-            // To'g'ri!
             guessed.push(expectedLetter);
             currentCode = "";
             currentEl.textContent = "";
             updateLine();
             play(300, 1200);
+            
+            // So'z to'liq topilganda SCORE oshadi
             if(guessed.length === currentWord.length){
+                score++;
+                scoreEl.textContent = score;
                 setTimeout(newWord, 1200);
             } else {
-                setTimeout(startTimer, 800); // keyingi harfga 5 sekund
+                setTimeout(startTimer, 800);
             }
         } else {
-            // Xato yoki to'liq emas
             wrong();
         }
     }
 
     function wrong(){
+        // Xato bo'lganda FAIL oshadi
+        errors++;
+        errorEl.textContent = errors;
+        
         document.body.classList.add("wrong");
         play(600, 300);
         setTimeout(() => {
@@ -136,8 +242,8 @@
 
     function newWord(){
         if(words.length === 0){
-            wordEl.textContent = "FINISHED!";
-            inputEl.textContent = "Perfect!";
+            wordEl.textContent = "WIN!";
+            inputEl.textContent = "Score: " + score;
             clearInterval(timer);
             button.style.display = "none";
             return;
@@ -162,13 +268,11 @@
     const LONG_PRESS = 500;
 
     button.addEventListener("mousedown", e => {
-        e.preventDefault();
         pressStart = Date.now();
         button.classList.add("pressed");
     });
 
     button.addEventListener("mouseup", e => {
-        e.preventDefault();
         if(!button.classList.contains("pressed")) return;
         const dur = Date.now() - pressStart;
         button.classList.remove("pressed");
@@ -178,16 +282,30 @@
 
         currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim();
         play(dur < LONG_PRESS ? 120 : 360, 900);
-
-        // Hech qachon o'rtada tekshirmaymiz!
-        // Faqat 5 sekund tugaganda tekshiriladi
     });
+    
+    button.addEventListener("touchstart", e=>{
+        e.preventDefault(); 
+        pressStart = Date.now();
+        button.classList.add("pressed");
+    });
+    
+    button.addEventListener("touchend", e=>{
+        e.preventDefault(); 
+        if(!button.classList.contains("pressed")) return;
+        const dur = Date.now() - pressStart;
+        button.classList.remove("pressed");
 
-    button.addEventListener("touchstart", e=>{e.preventDefault(); button.dispatchEvent(new Event("mousedown"));});
-    button.addEventListener("touchend",   e=>{e.preventDefault(); button.dispatchEvent(new Event("mouseup"));});
+        const sym = dur < LONG_PRESS ? "." : "-";
+        currentCode += sym;
+
+        currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim();
+        play(dur < LONG_PRESS ? 120 : 360, 900);
+    });
 
     newWord();
     document.body.addEventListener("click", () => audioCtx.resume(), {once:true});
+    document.body.addEventListener("touchstart", () => audioCtx.resume(), {once:true});
 </script>
 </body>
 </html>
