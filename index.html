@@ -3,168 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Morse Trainer - Stats Added</title>
+    <title>Morse Exam - Student</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            background: #000;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
+        body{margin:0;height:100vh;background:#000;color:#0f0;font-family:'Courier New',monospace;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+        #word{font-size:15vmin;letter-spacing:2vmin;margin-bottom:1vh;text-shadow:0 0 4vmin #0f0;text-align:center;margin-top:5vh;}
+        #timer{font-size:10vmin;margin-bottom:2vh;color:#0ff;font-weight:bold;}
+        #currentInput{font-size:10vmin;margin-bottom:2vh;color:#0ff;min-height:12vmin;}
+        #inputLine{font-size:12vmin;letter-spacing:3vmin;margin-bottom:5vh;text-align:center;}
+        #button{width:35vmin;height:35vmin;border-radius:50%;background:#111;border:1.5vmin solid #0f0;box-shadow:0 0 6vmin #0f0;cursor:pointer;user-select:none;font-size:5vmin;font-weight:bold;display:flex;align-items:center;justify-content:center;}
+        #button.pressed{background:#0f0;color:#000;box-shadow:0 0 15vmin #0f0;transform:scale(0.9);}
+        .wrong{animation:shake 0.6s;background:#600;}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2vmin)}75%{transform:translateX(2vmin)}}
+        .info, .stats, .exam-timer{position:absolute;top:2vh;font-size:3vmin;color:#0a0;background:#111;padding:1.5vmin;border:0.3vmin solid #0f0;border-radius:1.5vmin;z-index:10;}
+        .info{left:2vh;} .stats{right:2vh;text-align:right;} 
+        .exam-timer { top: auto; bottom: 2vh; left: 50%; transform: translateX(-50%); color: #ff0; font-size: 4vmin; font-weight: bold;}
 
-        #word {
-            font-size: 15vmin; 
-            letter-spacing: 2vmin;
-            margin-bottom: 1vh;
-            text-shadow: 0 0 4vmin #0f0;
-            text-align: center;
-            margin-top: 5vh; /* Info panellar bilan ustma-ust tushmasligi uchun joy */
-        }
-
-        #timer {
-            font-size: 10vmin;
-            margin-bottom: 2vh;
-            color: #0ff;
-            font-weight: bold;
-        }
-
-        #currentInput {
-            font-size: 10vmin;
-            margin-bottom: 2vh;
-            color: #0ff;
-            min-height: 8vmin;
-        }
-
-        #inputLine {
-            font-size: 8vmin;
-            letter-spacing: 2vmin;
-            margin-bottom: 5vh;
-            text-align: center;
-        }
-
-        #button {
-            width: 25vmin;
-            height: 25vmin;
-            min-width: 200px;
-            min-height: 200px;
-            border-radius: 50%;
-            background: #111;
-            border: 1.5vmin solid #0f0;
-            box-shadow: 0 0 6vmin #0f0;
-            cursor: pointer;
-            user-select: none;
-            font-size: 5vmin;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-        }
-
-        #button.pressed {
-            background: #0f0;
-            color: #000;
-            box-shadow: 0 0 15vmin #0f0;
-            transform: scale(0.9);
-        }
-
-        .wrong {
-            animation: shake 0.6s;
-            background: #600;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-2vmin); }
-            75% { transform: translateX(2vmin); }
-        }
-
-        /* Ikkala panel uchun umumiy stil (dizayn bir xil bo'lishi uchun) */
-        .info, .stats {
-            position: absolute;
-            top: 2vh;
-            font-size: 3vmin;
-            color: #0a0;
-            background: #111;
-            padding: 1.5vmin;
-            border: 0.3vmin solid #0f0;
-            border-radius: 1.5vmin;
-            z-index: 10;
-            line-height: 1.4;
-        }
-
-        .info {
-            left: 2vh;
-            text-align: left;
-        }
-
-        /* Yangi qo'shilgan qism: O'ng yuqori burchak */
-        .stats {
-            right: 2vh;
-            text-align: right;
-        }
-        
-        @media (max-width: 400px) {
-            #button {
-                width: 60vw;
-                height: 60vw;
-                min-width: auto;
-                min-height: auto;
-            }
-            .info, .stats {
-                font-size: 3.5vmin; /* Mobil uchun sal kattaroq o'qilishi uchun */
-                padding: 1vmin;
-            }
-        }
+        /* Login Screen */
+        #loginOverlay {position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        input { font-size: 5vmin; padding: 2vmin; background: #111; color: #0f0; border: 2px solid #0f0; outline: none; text-align: center; margin-bottom: 20px; border-radius: 10px;}
+        button.start-btn { font-size: 5vmin; padding: 2vmin 5vmin; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold; border-radius: 10px;}
     </style>
 </head>
 <body>
 
-<!-- Chap panel: Yo'riqnoma -->
-<div class="info">
-    Short → .<br>Hold → —
+<div id="loginOverlay">
+    <h1 style="color:#0f0; font-size:6vmin; margin-bottom:10px;">MORSE EXAM</h1>
+    <p style="color:#0a0; font-size:3vmin; margin-bottom:30px;">20 daqiqa vaqt beriladi</p>
+    <input type="text" id="usernameInput" placeholder="Ism Familiya" autocomplete="off">
+    <button class="start-btn" onclick="startGameSession()">BOSHLASH</button>
 </div>
 
-<!-- O'ng panel: Statistika -->
-<div class="stats">
-    Word: <span id="scoreVal" style="color:#fff">0</span><br>
-    Fail: <span id="errorVal" style="color:#f00">0</span>
-</div>
+<div class="info">Short → .<br>Hold → —</div>
+<div class="stats">Word: <span id="scoreVal" style="color:#fff">0</span><br>Fail: <span id="errorVal" style="color:#f00">0</span></div>
+<div class="exam-timer">Time: <span id="globalTimer">20:00</span></div>
 
-<div id="word">START</div>
+<div id="word">WAIT</div>
 <div id="timer">5.0</div>
 <div id="currentInput"></div>
-<div id="inputLine">_ _ _ _ _</div>
+<div id="inputLine">_ _ _</div>
 <div id="button">PRESS</div>
 
 <script>
-    const words = ["HELLO","WORLD","MORSE","CODE","RADIO","YES","YOU","FRIEND","HOME","LOVE","PEACE","GOOD","NIGHT","STAR","MOON","SKY","WAVE","TEST","SOS"];
-
-    const morseToLetter = {
-        '.-':'A', '-...':'B', '-.-.':'C', '-..':'D', '.':'E', '..-.':'F',
-        '--.':'G', '....':'H', '..':'I', '.---':'J', '-.-':'K', '.-..':'L',
-        '--':'M', '-.':'N', '---':'O', '.--.':'P', '--.-':'Q', '.-.':'R',
-        '...':'S', '-':'T', '..-':'U', '...-':'V', '.--':'W', '-..-':'X',
-        '-.--':'Y', '--..':'Z'
+    // --- FIREBASE CONFIG START ---
+    // SHU YERGA FIREBASE KONSOLEDAN OLGAN KODINGIZNI QO'YING
+    const firebaseConfig = {
+        apiKey: "AIzaSyAjbCP0Felmv9x44t6xKUG1SJFDOHSrXjg",
+        authDomain: "morcetest.firebaseapp.com",
+        projectId: "morcetest",
+        storageBucket: "morcetest.firebasestorage.app",
+        messagingSenderId: "4777699748",
+        appId: "1:4777699748:web:d9fdbe920e20f7fe5cf931",
+        measurementId: "G-166HN8K4R5"
     };
+    // --- FIREBASE CONFIG END ---
 
-    let currentWord = "";
-    let guessed = [];
-    let currentCode = "";
-    let timer = null;
-    let timeLeft = 5.0;
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let studentId = null;
+    let examActive = false;
+    let globalTimeLeft = 20 * 60; // 20 daqiqa sekundda
+
+    const words = ["HELLO","WORLD","MORSE","CODE","RADIO","YES","YOU","FRIEND","HOME","LOVE","PEACE","GOOD","NIGHT","STAR","MOON","SKY","WAVE","TEST","SOS"];
+    const morseToLetter = {'.-':'A', '-...':'B', '-.-.':'C', '-..':'D', '.':'E', '..-.':'F', '--.':'G', '....':'H', '..':'I', '.---':'J', '-.-':'K', '.-..':'L', '--':'M', '-.':'N', '---':'O', '.--.':'P', '--.-':'Q', '.-.':'R', '...':'S', '-':'T', '..-':'U', '...-':'V', '.--':'W', '-..-':'X', '-.--':'Y', '--..':'Z'};
+
+    let currentWord = "", guessed = [], currentCode = "", timer = null, timeLeft = 5.0;
+    let score = 0, errors = 0;
     
-    // Statistika o'zgaruvchilari
-    let score = 0;
-    let errors = 0;
-
     const wordEl = document.getElementById("word");
     const timerEl = document.getElementById("timer");
     const currentEl = document.getElementById("currentInput");
@@ -172,8 +81,60 @@
     const button = document.getElementById("button");
     const scoreEl = document.getElementById("scoreVal");
     const errorEl = document.getElementById("errorVal");
-
+    const globalTimerEl = document.getElementById("globalTimer");
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function startGameSession() {
+        const name = document.getElementById("usernameInput").value.trim();
+        if(!name) return alert("Iltimos, ismingizni yozing!");
+        
+        // Bazaga yangi user yaratish
+        const newRef = database.ref('results').push();
+        studentId = newRef.key;
+        
+        newRef.set({
+            name: name,
+            score: 0,
+            errors: 0,
+            status: "Started",
+            timestamp: Date.now()
+        });
+
+        document.getElementById("loginOverlay").style.display = "none";
+        examActive = true;
+        
+        // Global taymerni ishga tushirish
+        setInterval(() => {
+            if(!examActive) return;
+            globalTimeLeft--;
+            let m = Math.floor(globalTimeLeft / 60);
+            let s = globalTimeLeft % 60;
+            globalTimerEl.textContent = `${m}:${s<10?'0':''}${s}`;
+            
+            if(globalTimeLeft <= 0) finishExam();
+        }, 1000);
+
+        audioCtx.resume();
+        newWord();
+    }
+
+    function updateDB() {
+        if(studentId) {
+            database.ref('results/' + studentId).update({
+                score: score,
+                errors: errors
+            });
+        }
+    }
+
+    function finishExam() {
+        examActive = false;
+        clearInterval(timer);
+        wordEl.textContent = "TIME UP!";
+        inputEl.textContent = "Imtihon tugadi";
+        button.style.display = "none";
+        database.ref('results/' + studentId).update({ status: "Finished" });
+    }
 
     function play(dur, freq=800){
         const o = audioCtx.createOscillator(), g = audioCtx.createGain();
@@ -183,6 +144,7 @@
     }
 
     function startTimer(){
+        if(!examActive) return;
         clearInterval(timer);
         timeLeft = 5.0;
         timerEl.textContent = "5.0";
@@ -210,10 +172,10 @@
             updateLine();
             play(300, 1200);
             
-            // So'z to'liq topilganda SCORE oshadi
             if(guessed.length === currentWord.length){
                 score++;
                 scoreEl.textContent = score;
+                updateDB(); // Bazani yangilash
                 setTimeout(newWord, 1200);
             } else {
                 setTimeout(startTimer, 800);
@@ -224,9 +186,9 @@
     }
 
     function wrong(){
-        // Xato bo'lganda FAIL oshadi
         errors++;
         errorEl.textContent = errors;
+        updateDB(); // Bazani yangilash
         
         document.body.classList.add("wrong");
         play(600, 300);
@@ -241,15 +203,9 @@
     }
 
     function newWord(){
-        if(words.length === 0){
-            wordEl.textContent = "WIN!";
-            inputEl.textContent = "Score: " + score;
-            clearInterval(timer);
-            button.style.display = "none";
-            return;
-        }
+        if(!examActive) return;
         const i = Math.floor(Math.random() * words.length);
-        currentWord = words.splice(i, 1)[0];
+        currentWord = words[i]; // So'zlar tugamasligi uchun random turaversin
         guessed = [];
         currentCode = "";
         wordEl.textContent = currentWord;
@@ -264,48 +220,11 @@
         inputEl.textContent = s.trim();
     }
 
-    let pressStart = 0;
-    const LONG_PRESS = 500;
-
-    button.addEventListener("mousedown", e => {
-        pressStart = Date.now();
-        button.classList.add("pressed");
-    });
-
-    button.addEventListener("mouseup", e => {
-        if(!button.classList.contains("pressed")) return;
-        const dur = Date.now() - pressStart;
-        button.classList.remove("pressed");
-
-        const sym = dur < LONG_PRESS ? "." : "-";
-        currentCode += sym;
-
-        currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim();
-        play(dur < LONG_PRESS ? 120 : 360, 900);
-    });
-    
-    button.addEventListener("touchstart", e=>{
-        e.preventDefault(); 
-        pressStart = Date.now();
-        button.classList.add("pressed");
-    });
-    
-    button.addEventListener("touchend", e=>{
-        e.preventDefault(); 
-        if(!button.classList.contains("pressed")) return;
-        const dur = Date.now() - pressStart;
-        button.classList.remove("pressed");
-
-        const sym = dur < LONG_PRESS ? "." : "-";
-        currentCode += sym;
-
-        currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim();
-        play(dur < LONG_PRESS ? 120 : 360, 900);
-    });
-
-    newWord();
-    document.body.addEventListener("click", () => audioCtx.resume(), {once:true});
-    document.body.addEventListener("touchstart", () => audioCtx.resume(), {once:true});
+    let pressStart = 0; const LONG_PRESS = 500;
+    button.addEventListener("mousedown", e => { if(examActive){ pressStart = Date.now(); button.classList.add("pressed"); }});
+    button.addEventListener("mouseup", e => { if(!button.classList.contains("pressed") || !examActive) return; const dur = Date.now() - pressStart; button.classList.remove("pressed"); const sym = dur < LONG_PRESS ? "." : "-"; currentCode += sym; currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim(); play(dur < LONG_PRESS ? 120 : 360, 900); });
+    button.addEventListener("touchstart", e=>{e.preventDefault(); if(examActive){ pressStart = Date.now(); button.classList.add("pressed");}});
+    button.addEventListener("touchend", e=>{e.preventDefault(); if(!button.classList.contains("pressed") || !examActive) return; const dur = Date.now() - pressStart; button.classList.remove("pressed"); const sym = dur < LONG_PRESS ? "." : "-"; currentCode += sym; currentEl.textContent = currentCode.replace(/\./g,"• ").replace(/-/g,"— ").trim(); play(dur < LONG_PRESS ? 120 : 360, 900); });
 </script>
 </body>
 </html>
