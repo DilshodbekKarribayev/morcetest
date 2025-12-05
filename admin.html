@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { background: #111; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { text-align: center; border-bottom: 2px solid #0f0; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 15px; text-align: center; font-size: 1.2rem; }
+        th { background: #002200; color: #fff; }
+        tr:nth-child(even) { background: #050505; }
+        .reset-btn { display:block; margin: 20px auto; background: #600; color: #fff; padding: 10px 20px; border:none; cursor:pointer; font-size: 1rem; border-radius: 5px; }
+        .reset-btn:hover { background: #f00; }
+    </style>
+</head>
+<body>
+
+    <h1>MORSE EXAM RESULTS</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>O'quvchi Ismi</th>
+                <th>To'g'ri (Score)</th>
+                <th>Xatolar (Fail)</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="resultsTable">
+            <tr><td colspan="4">Loading data...</td></tr>
+        </tbody>
+    </table>
+
+    <button class="reset-btn" onclick="clearData()">HAMMA NATIJALARNI O'CHIRISH (Yangi Imtihon)</button>
+
+<script>
+    // --- FIREBASE CONFIG START ---
+    // HUDDI INDEX.HTMLDAGI KODNI SHU YERGA HAM QO'YING
+    const firebaseConfig = {
+        apiKey: "AIzaSyAjbCP0Felmv9x44t6xKUG1SJFDOHSrXjg",
+        authDomain: "morcetest.firebaseapp.com",
+        projectId: "morcetest",
+        storageBucket: "morcetest.firebasestorage.app",
+        messagingSenderId: "4777699748",
+        appId: "1:4777699748:web:d9fdbe920e20f7fe5cf931",
+        measurementId: "G-166HN8K4R5"
+    };
+    // --- FIREBASE CONFIG END ---
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const tableBody = document.getElementById("resultsTable");
+
+    // Bazani kuzatish
+    database.ref('results').on('value', (snapshot) => {
+        tableBody.innerHTML = "";
+        const data = snapshot.val();
+        
+        if(!data) {
+            tableBody.innerHTML = "<tr><td colspan='4'>Hozircha natijalar yo'q</td></tr>";
+            return;
+        }
+
+        // Objectni arrayga aylantirib, Score bo'yicha sortlaymiz
+        const students = Object.keys(data).map(key => data[key]);
+        students.sort((a, b) => b.score - a.score); // Eng ko'p topganlar tepada
+
+        students.forEach(student => {
+            const row = `
+                <tr>
+                    <td style="color:#fff; font-weight:bold">${student.name}</td>
+                    <td style="color:#0f0">${student.score}</td>
+                    <td style="color:#f00">${student.errors}</td>
+                    <td>${student.status || 'Active'}</td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    });
+
+    function clearData() {
+        if(confirm("Rostdan ham hamma natijalarni o'chirmoqchimisiz?")) {
+            database.ref('results').remove();
+        }
+    }
+</script>
+
+</body>
+</html>
